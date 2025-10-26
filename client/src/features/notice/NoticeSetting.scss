@@ -19,7 +19,11 @@
   padding: 18px;
   margin-bottom: 16px;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
-  transition: all 0.2s ease;
+  transition: transform 0.2s ease, box-shadow 0.1s ease;
+  &:hover {
+    box-shadow: 0 10px 15px 4px #b6d2f854;
+    border: 2px solid #87bbff58;
+  }
 
   .notice-card-header {
     margin-bottom: 12px;
@@ -74,7 +78,7 @@
 
   .notice-card-channel {
     margin-bottom: 15px;
-    color: #666;
+    color: #777;
 
     .channel {
       font-size: 12px;
