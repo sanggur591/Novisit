@@ -6,14 +6,11 @@ import { tokenStore } from "./api/http";
 type AuthState = {
   user: User | null;
   loading: boolean;
-
-  // ✅ 추가 노출
   accessToken: string | null;
   isAuthenticated: boolean;
 
   setUser: (u: User | null) => void;
   refreshMe: () => Promise<void>;
-  // ✅ 토큰을 이미 저장(예: 소셜콜백)해둔 뒤 컨텍스트 동기화할 때 호출
   loginFromTokens: () => Promise<void>;
   logout: () => Promise<void>;
 };
@@ -40,7 +37,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     } catch {
       setUser(null);
     } finally {
-      // 토큰이 갱신/만료됐을 수 있으므로 매번 동기화
       syncAccessToken();
     }
   };
@@ -48,7 +44,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   useEffect(() => {
     (async () => {
       setLoading(true);
-      // 최초 마운트 시 토큰 존재 여부 확인
       const hasToken = !!(tokenStore.getAccess() || tokenStore.getRefresh());
       syncAccessToken();
       if (hasToken) {
@@ -70,7 +65,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       window.removeEventListener("storage", onStorage);
       window.removeEventListener("focus", onFocus);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // 초기 1회만
 
   const loginFromTokens = async () => {
