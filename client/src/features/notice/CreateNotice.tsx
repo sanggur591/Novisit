@@ -12,6 +12,7 @@ import {
   Channel,
 } from "../../api/settingsAPI";
 
+// 필요시 유지해도 되지만 현재는 미사용
 export type NoticeItemShape = {
   id: string;
   title: string;
@@ -22,7 +23,7 @@ export type NoticeItemShape = {
 };
 
 interface CreateNoticeProps {
-  onCreated: (item: NoticeItemShape) => void;
+  onCreated: (setting: Setting) => void;
 }
 
 const CreateNotice: React.FC<CreateNoticeProps> = ({ onCreated }) => {
@@ -34,7 +35,7 @@ const CreateNotice: React.FC<CreateNoticeProps> = ({ onCreated }) => {
   const [urlText, setUrlText] = useState("");
   const [keywordText, setKeywordText] = useState("");
   const [selected, setSelected] = useState<Record<Channel, boolean>>({
-    kakao: true,
+    kakao: false,
     discord: false,
   });
 
@@ -73,22 +74,6 @@ const CreateNotice: React.FC<CreateNoticeProps> = ({ onCreated }) => {
       .filter((v): v is Channel => v === "kakao" || v === "discord");
   };
 
-  const toNoticeItem = (s: Setting): NoticeItemShape => {
-    const channels = toChannelsArray(s.channel);
-    const dateText =
-      typeof s.created_at === "string" && s.created_at.trim()
-        ? s.created_at
-        : new Date().toLocaleDateString("ko-KR");
-    return {
-      id: String(s.id || s._id || Date.now()),
-      title: s.name,
-      tags: (s.filter_keywords ?? []).map((k) => ({ label: k })),
-      channels,
-      date: dateText,
-      link: s.url_list?.[0],
-    };
-  };
-
   const canSubmit = !!domainId.trim() && !!name.trim() && !loading;
 
   const toggle = (key: Channel) =>
@@ -106,7 +91,6 @@ const CreateNotice: React.FC<CreateNoticeProps> = ({ onCreated }) => {
       return;
     }
 
-    // 선택 개수에 따라 단일/배열로 유연 전송
     const channelPayload: Channel | Channel[] =
       chosen.length === 1 ? chosen[0] : chosen;
 
@@ -121,7 +105,9 @@ const CreateNotice: React.FC<CreateNoticeProps> = ({ onCreated }) => {
     try {
       setLoading(true);
       const setting = await createSetting(payload);
-      onCreated(toNoticeItem(setting));
+
+      onCreated(setting);
+
       setBanner({ type: "success", text: "알림 설정이 생성되었습니다." });
 
       // reset & close

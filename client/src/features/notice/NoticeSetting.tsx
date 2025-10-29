@@ -4,7 +4,7 @@ import "../../../public/assets/style/_typography.scss";
 import "./NoticeSetting.scss";
 import { FiEdit, FiSave, FiX, FiTrash2 } from "react-icons/fi";
 import { IoMdTime } from "react-icons/io";
-import CreateNotice, { NoticeItemShape } from "./CreateNotice";
+import CreateNotice from "./CreateNotice";
 import {
   fetchSettings,
   updateSetting,
@@ -46,13 +46,9 @@ const toKST = (iso: string) =>
 
 const toChannelsArray = (ch?: any, fallbackMsg?: Message): Channel[] => {
   let arr: string[] = [];
-  if (Array.isArray(ch)) {
-    arr = ch;
-  } else if (typeof ch === "string") {
-    arr = ch.split(","); // ★ CSV 지원
-  } else if (ch === "kakao" || ch === "discord") {
-    arr = [ch];
-  }
+  if (Array.isArray(ch)) arr = ch;
+  else if (typeof ch === "string") arr = ch.split(","); // ★ CSV 지원
+  else if (ch === "kakao" || ch === "discord") arr = [ch];
 
   let ret = arr
     .map((v) => String(v).trim().toLowerCase())
@@ -64,14 +60,14 @@ const toChannelsArray = (ch?: any, fallbackMsg?: Message): Channel[] => {
   }
   return Array.from(new Set(ret));
 };
+
 const mapSettingToItem = (s: Setting): NoticeItem => {
   const firstMsg = pickFirstMessage(s);
-  const channels = toChannelsArray(s.channel, firstMsg);
+  const channels = toChannelsArray((s as any).channel, firstMsg);
 
-  // 날짜: created_at > 첫 메시지 > 오늘
   const dateText =
-    typeof s.created_at === "string" && s.created_at.trim()
-      ? s.created_at
+    typeof (s as any).created_at === "string" && (s as any).created_at.trim()
+      ? (s as any).created_at
       : firstMsg?.sended_at
       ? toKST(firstMsg.sended_at)
       : new Date().toLocaleDateString("ko-KR");
@@ -478,8 +474,11 @@ function NoticeSettingInner() {
     setItems((prev) => prev.filter((it) => it.id !== id));
   };
 
-  const handleCreated = (item: NoticeItemShape) => {
-    setItems((prev) => [item as unknown as NoticeItem, ...prev]);
+  const handleCreated = (s: Setting) => {
+    const id = getId(s);
+    setSettingsMap((prev) => ({ ...prev, [id]: s }));
+    setItems((prev) => [...prev, mapSettingToItem(s)]); // 맨 밑에 추가
+    // setBanner({ type: "success", text: "알림 설정이 생성되었습니다." }); // 선택
   };
 
   const empty = useMemo(
@@ -531,6 +530,7 @@ function NoticeSettingInner() {
           );
         })}
 
+      {/* ✅ 원본 Setting을 받아오는 콜백 전달 */}
       <CreateNotice onCreated={handleCreated} />
     </div>
   );
