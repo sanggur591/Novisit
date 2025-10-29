@@ -30,11 +30,9 @@ const CreateNotice: React.FC<CreateNoticeProps> = ({ onCreated }) => {
 
   const [open, setOpen] = useState(false);
   const [domainId, setDomainId] = useState("");
-  const [name, setName] = useState("공지 알림");
-  const [urlText, setUrlText] = useState("https://example.com/news");
-  const [keywordText, setKeywordText] = useState("공지, 업데이트");
-
-  // ★ 다중 선택(토글)
+  const [name, setName] = useState("");
+  const [urlText, setUrlText] = useState("");
+  const [keywordText, setKeywordText] = useState("");
   const [selected, setSelected] = useState<Record<Channel, boolean>>({
     kakao: true,
     discord: false,

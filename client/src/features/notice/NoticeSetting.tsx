@@ -384,7 +384,7 @@ function NoticeCard({
           <TagEditor
             label="URL 목록"
             values={urls}
-            placeholder="https://example.com/news"
+            placeholder="새 url 입력"
             onChange={setUrls}
           />
         </>
