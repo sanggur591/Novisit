@@ -1,23 +1,22 @@
-// src/features/notice/CreateNotice.tsx
-import React, { useState, useEffect } from "react";
+import React, { useState, FormEvent, useEffect } from "react";
 import { createPortal } from "react-dom";
 import "../../../public/assets/style/_flex.scss";
 import "../../../public/assets/style/_typography.scss";
-import "./NoticeSetting.scss";
+import "./CreateNotice.scss";
 import { FiPlus } from "react-icons/fi";
 import { useAuth } from "../../auth";
-
-// ❗ 파일명이 settingsAPI.ts(복수형)인지 꼭 확인!
-import { createSetting, ApiError, Setting } from "../../api/settingsAPI";
-
-export type Channel = "kakao" | "discord" | "email" | "sms";
+import {
+  createSetting,
+  ApiError,
+  Setting,
+  Channel,
+} from "../../api/settingsAPI";
 
 export type NoticeItemShape = {
   id: string;
   title: string;
   tags: { label: string }[];
-  channel: Channel;
-  channelLabel: string;
+  channels: Channel[]; // ★ 다중
   date: string;
   link?: string;
 };
@@ -29,12 +28,17 @@ interface CreateNoticeProps {
 const CreateNotice: React.FC<CreateNoticeProps> = ({ onCreated }) => {
   const { logout } = (useAuth() as any) ?? {};
 
-  // 모달/폼 상태
   const [open, setOpen] = useState(false);
   const [domainId, setDomainId] = useState("");
   const [name, setName] = useState("공지 알림");
   const [urlText, setUrlText] = useState("https://example.com/news");
   const [keywordText, setKeywordText] = useState("공지, 업데이트");
+
+  // ★ 다중 선택(토글)
+  const [selected, setSelected] = useState<Record<Channel, boolean>>({
+    kakao: true,
+    discord: false,
+  });
 
   const [loading, setLoading] = useState(false);
   const [banner, setBanner] = useState<{
@@ -42,16 +46,10 @@ const CreateNotice: React.FC<CreateNoticeProps> = ({ onCreated }) => {
     text: string;
   } | null>(null);
 
-  // ESC 닫기 + 스크롤 잠금 (SSR 가드 포함)
   useEffect(() => {
     if (!open) return;
-    if (typeof document === "undefined") return;
-
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setOpen(false);
-    };
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
     document.addEventListener("keydown", onKey);
-
     const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     return () => {
@@ -60,81 +58,98 @@ const CreateNotice: React.FC<CreateNoticeProps> = ({ onCreated }) => {
     };
   }, [open]);
 
-  // 문자열 → 리스트 파서
   const parseList = (text: string) =>
     text
       .split(/[\n,]/g)
       .map((s) => s.trim())
       .filter(Boolean);
 
-  // Setting → 카드 데이터 (id/_id 모두 대응)
-  const toNoticeItem = (s: Setting): NoticeItemShape => ({
-    id: String(
-      (s as any)._id ?? (s as any).id ?? crypto.randomUUID?.() ?? Date.now()
-    ),
-    title: s.name,
-    tags: (s.filter_keywords ?? []).map((k) => ({ label: k })),
-    channel: "kakao", // 서버 스펙에 채널 없음 → 임시 표기
-    channelLabel: "카카오톡",
-    date: new Date().toLocaleDateString("ko-KR"),
-    link: s.url_list?.[0],
-  });
+  const toChannelsArray = (ch?: string | Channel | Channel[]): Channel[] => {
+    if (!ch) return [];
+    if (Array.isArray(ch)) {
+      return ch.filter((v): v is Channel => v === "kakao" || v === "discord");
+    }
+    return String(ch)
+      .split(",")
+      .map((s) => s.trim().toLowerCase())
+      .filter((v): v is Channel => v === "kakao" || v === "discord");
+  };
+
+  const toNoticeItem = (s: Setting): NoticeItemShape => {
+    const channels = toChannelsArray(s.channel);
+    const dateText =
+      typeof s.created_at === "string" && s.created_at.trim()
+        ? s.created_at
+        : new Date().toLocaleDateString("ko-KR");
+    return {
+      id: String(s.id || s._id || Date.now()),
+      title: s.name,
+      tags: (s.filter_keywords ?? []).map((k) => ({ label: k })),
+      channels,
+      date: dateText,
+      link: s.url_list?.[0],
+    };
+  };
 
   const canSubmit = !!domainId.trim() && !!name.trim() && !loading;
 
-  const handleSubmit: React.FormEventHandler<HTMLFormElement> = async (e) => {
+  const toggle = (key: Channel) =>
+    setSelected((prev) => ({ ...prev, [key]: !prev[key] }));
+
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setBanner(null);
+
+    const chosen = (["kakao", "discord"] as Channel[]).filter(
+      (c) => selected[c]
+    );
+    if (chosen.length === 0) {
+      setBanner({ type: "error", text: "채널을 최소 1개 이상 선택해 주세요." });
+      return;
+    }
+
+    // 선택 개수에 따라 단일/배열로 유연 전송
+    const channelPayload: Channel | Channel[] =
+      chosen.length === 1 ? chosen[0] : chosen;
 
     const payload = {
       domain_id: domainId.trim(),
       name: name.trim(),
       url_list: parseList(urlText),
       filter_keywords: parseList(keywordText),
+      channel: channelPayload, // ★ 단일 or 배열
     };
-
-    if (!payload.domain_id || !payload.name) {
-      setBanner({ type: "error", text: "domain_id와 name은 필수입니다." });
-      return;
-    }
 
     try {
       setLoading(true);
-      if (import.meta.env.DEV) {
-        console.log("[CreateNotice] submit payload =", payload);
-      }
-
       const setting = await createSetting(payload);
       onCreated(toNoticeItem(setting));
       setBanner({ type: "success", text: "알림 설정이 생성되었습니다." });
 
-      // 초기화 & 닫기
+      // reset & close
       setDomainId("");
       setName("공지 알림");
       setUrlText("");
       setKeywordText("");
+      setSelected({ kakao: true, discord: false });
       setOpen(false);
-    } catch (err: unknown) {
-      const apiErr = err as ApiError;
-      const msg = apiErr?.message || "네트워크 오류가 발생했습니다.";
+    } catch (err: any) {
+      const msg =
+        err instanceof ApiError ? err.message : "네트워크 오류가 발생했습니다.";
       setBanner({ type: "error", text: msg });
-      if (apiErr?.status === 401 || apiErr?.status === 403) {
-        logout?.(); // 만료/무효 → 메인으로
-      }
-      if (import.meta.env.DEV) {
-        console.error("[CreateNotice] submit error =", err);
+      if (
+        err instanceof ApiError &&
+        (err.status === 401 || err.status === 403)
+      ) {
+        logout?.();
       }
     } finally {
       setLoading(false);
     }
   };
 
-  // 포털 대상(SPA 환경이면 항상 존재) 가드
-  const portalTarget = typeof document !== "undefined" ? document.body : null;
-
   return (
     <>
-      {/* + 버튼 (FAB) */}
       <div className="notice-add-row">
         <button
           type="button"
@@ -146,12 +161,10 @@ const CreateNotice: React.FC<CreateNoticeProps> = ({ onCreated }) => {
         </button>
       </div>
 
-      {/* 모달 */}
       {open &&
-        portalTarget &&
         createPortal(
           <div
-            className="modal-backdrop"
+            className="modal-backdrop flex-center"
             role="dialog"
             aria-modal="true"
             onClick={() => setOpen(false)}
@@ -161,17 +174,10 @@ const CreateNotice: React.FC<CreateNoticeProps> = ({ onCreated }) => {
               onClick={(e) => e.stopPropagation()}
               aria-labelledby="modal-title"
             >
-              <div className="modal__header">
+              <div className="modal__header flex-center">
                 <div id="modal-title" className="heading3">
                   알림 설정 생성
                 </div>
-                <button
-                  className="modal__close button2"
-                  onClick={() => setOpen(false)}
-                  aria-label="닫기"
-                >
-                  ✕
-                </button>
               </div>
 
               <div className="modal__body">
@@ -183,19 +189,17 @@ const CreateNotice: React.FC<CreateNoticeProps> = ({ onCreated }) => {
                         : "notice-banner--error"
                     }`}
                     role="alert"
-                    style={{ marginBottom: 12 }}
                   >
                     {banner.text}
                   </div>
                 )}
 
-                <form className="notice-form" onSubmit={handleSubmit}>
+                <form className="notice-form flex-col" onSubmit={handleSubmit}>
                   <label className="form__label">
                     도메인 ID <span className="req">*</span>
                     <input
                       className="form__input"
                       type="text"
-                      placeholder="6710abcd1234ef5678901234"
                       value={domainId}
                       onChange={(e) => setDomainId(e.target.value)}
                       required
@@ -207,19 +211,40 @@ const CreateNotice: React.FC<CreateNoticeProps> = ({ onCreated }) => {
                     <input
                       className="form__input"
                       type="text"
-                      placeholder="공지 알림"
                       value={name}
                       onChange={(e) => setName(e.target.value)}
                       required
                     />
                   </label>
+                  <div className="flex-row form__group">
+                    <div className="channel-label">채널</div>
+                    <div className="channel-toggle-row">
+                      <button
+                        type="button"
+                        className={`chip ${
+                          selected.kakao ? "chip--active" : ""
+                        } channel kakao`}
+                        onClick={() => toggle("kakao")}
+                      >
+                        카카오톡
+                      </button>
+                      <button
+                        type="button"
+                        className={`chip ${
+                          selected.discord ? "chip--active" : ""
+                        } channel discord`}
+                        onClick={() => toggle("discord")}
+                      >
+                        디스코드
+                      </button>
+                    </div>
+                  </div>
 
                   <label className="form__label">
                     URL 목록 (줄바꿈 또는 쉼표)
                     <textarea
                       className="form__textarea"
                       rows={3}
-                      placeholder={`https://example.com/news\nhttps://another.com/notice`}
                       value={urlText}
                       onChange={(e) => setUrlText(e.target.value)}
                     />
@@ -230,13 +255,12 @@ const CreateNotice: React.FC<CreateNoticeProps> = ({ onCreated }) => {
                     <textarea
                       className="form__textarea"
                       rows={3}
-                      placeholder="공지, 업데이트"
                       value={keywordText}
                       onChange={(e) => setKeywordText(e.target.value)}
                     />
                   </label>
 
-                  <div className="form__actions gap-8">
+                  <div className="form__actions flex-center">
                     <button
                       className="btn btn--secondary"
                       type="button"
@@ -257,7 +281,7 @@ const CreateNotice: React.FC<CreateNoticeProps> = ({ onCreated }) => {
               </div>
             </div>
           </div>,
-          portalTarget
+          document.body
         )}
     </>
   );
