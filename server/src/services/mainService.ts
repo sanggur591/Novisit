@@ -6,7 +6,7 @@ export async function getDomains() {
   return domains.map((domain: any) => ({
     id: domain._id,
     name: domain.name,
-    url_list: domain.url_list,
-    keywords: domain.keywords,
+    desc: domain.desc,
+    icon: domain.icon,
   }));
 }

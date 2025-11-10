@@ -6,28 +6,23 @@
 export interface InitialDomainData {
   _id?: string | number; // 명시적으로 지정할 _id (옵셔널)
   name: string;
-  url_list: string[];
-  keywords: string[];
-  setting_ids?: string[];
+  desc: string;
+  icon: string;
 }
 
 export const initialDomains: InitialDomainData[] = [
   {
     _id: "1", // 명시적으로 _id 지정 (문자열 또는 숫자 가능)
     name: "취업테스트",
-    url_list: [
-      "https://pknu-notice-watch.lovable.app",
-    ],
-    keywords: ["취업"],
-    setting_ids: [],
+    desc: "대기업, 공기업, 스타트업 등 다양한 채용 공고를 한눈에 확인하세요.",
+    icon: "Briefcase",
   },
   // 필요에 따라 더 많은 도메인을 추가할 수 있습니다
   // {
   //   _id: "2", // 또는 숫자로 _id: 2
   //   name: "Another Domain",
-  //   url_list: ["https://another.com"],
-  //   keywords: ["news", "updates"],
-  //   setting_ids: [],
+  //   description: "디자인, 개발, 논문, 영상 등 다양한 분야의 공모전",
+  //   icon: "Trophy",
   // },
 ];
 
