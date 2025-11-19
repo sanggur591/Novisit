@@ -47,6 +47,9 @@
   .recent-notice-message {
     margin-top: 17px;
     color: #777;
+    white-space: pre-wrap;
+    word-break: break-word;
+    overflow-wrap: break-word;
   }
 
   .recent-contour {
