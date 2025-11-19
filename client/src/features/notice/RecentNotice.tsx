@@ -232,6 +232,7 @@ const RecentNotice: React.FC = () => {
   );
 
   const [domains, setDomains] = useState<Domain[]>([]);
+  const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
   const domainMap = useMemo(
     () =>
       domains.reduce<Record<string, string>>((acc, d) => {
@@ -328,6 +329,18 @@ const RecentNotice: React.FC = () => {
   );
   const isEmpty = !loading && allItems.length === 0;
 
+  const toggleExpand = (key: string) => {
+    setExpandedItems((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) {
+        next.delete(key);
+      } else {
+        next.add(key);
+      }
+      return next;
+    });
+  };
+
   return (
     <div className="recent-notice flex-col">
       <div className="recent-notice-title heading3">최근 알림</div>
@@ -360,6 +373,7 @@ const RecentNotice: React.FC = () => {
           const tagName = domainMap[it.domainId] ?? "알림";
           const dateText = formatKstDate(it.sended_at);
           const showNew = isNewBy(it.sended_at, NEW_DAYS);
+          const isExpanded = expandedItems.has(it.key);
 
           return (
             <div key={it.key} className="recent-notice-content flex-col">
@@ -371,7 +385,15 @@ const RecentNotice: React.FC = () => {
                 <div className="recent-tag">{tagName}</div>
               </div>
 
-              <div className="recent-notice-message body3">{it.contents}</div>
+              <div
+                className={`recent-notice-message body3 ${
+                  isExpanded ? "expanded" : "collapsed"
+                }`}
+                onClick={() => toggleExpand(it.key)}
+                style={{ cursor: "pointer" }}
+              >
+                {it.contents}
+              </div>
 
               <div className="recent-contour"></div>
 
