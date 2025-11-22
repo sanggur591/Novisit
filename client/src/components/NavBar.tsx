@@ -17,7 +17,12 @@ export default function NavBar() {
   return (
     <header className="navbar flex-between">
       <div className="flex-center">
-        <Link to="/" className="navbar__logo logo-text heading1">
+        <Link to="/" className="navbar__logo logo-text heading1 flex-row">
+          <img
+            src="/assets/img/novisitlogo.png"
+            alt="Novisit Logo"
+            className="navbar__logo-image"
+          />
           Novisit
         </Link>
       </div>
@@ -46,7 +51,7 @@ export default function NavBar() {
           </>
         ) : (
           <>
-            <NavLink to="/login?kakao_prompt=login" className="login-btn body3">      
+            <NavLink to="/login?kakao_prompt=login" className="login-btn body3">
               시작하기
             </NavLink>
           </>
