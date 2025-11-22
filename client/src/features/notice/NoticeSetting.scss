@@ -3,11 +3,20 @@
   flex-direction: column;
   justify-content: flex-start;
   width: 30%;
+  min-width: 280px;
   gap: 10px;
   margin: 25px 25px;
 
   .notice-title {
     font-weight: 550;
+  }
+}
+
+/* 반응형 */
+@media (max-width: 900px) {
+  .notice-setting-container {
+    width: 100%;
+    margin: 15px 0;
   }
 }
 
