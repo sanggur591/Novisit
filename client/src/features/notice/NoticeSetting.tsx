@@ -270,7 +270,7 @@ function NoticeCard({
       <div className="notice-card-header flex-between">
         <div className="flex-row notice-card-header-left">
           <div className="notice-card-tags">
-            {item.domainName && (
+            {!editing && item.domainName && (
               <span className="tag domain-tag">{item.domainName}</span>
             )}
             {item.tags.map((t, i) => (
@@ -437,8 +437,11 @@ function NoticeCard({
 
           {/* 요약 상태 토글 (읽기 전용) */}
           <div className="notice-card-channel body3">
-            <div className="notify-toggle-wrap">
+            <div className="notify-toggle-wrap flex-row">
               <span className="notify-label body3">요약</span>
+              <span className="notify-label" aria-hidden>
+                {summary ? "ON" : "OFF"}
+              </span>
               <div
                 className={`toggle-wrap ${
                   item.summary ? "on" : "off"

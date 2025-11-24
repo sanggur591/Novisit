@@ -88,8 +88,13 @@
 
   // 편집 모드 라벨
   .form__label {
+    align-items: center;
     color: #333;
     margin-bottom: 6px;
+
+    .notify-label {
+      margin-left: 3px;
+    }
   }
 
   // 채널 토글 영역
