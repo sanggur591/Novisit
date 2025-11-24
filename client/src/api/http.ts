@@ -54,7 +54,7 @@ function isRefreshUrl(u?: string): boolean {
 if (import.meta.env.DEV) {
   (window as any).__http = http;
   (window as any).__API_BASE__ = http.defaults.baseURL ?? "";
-  console.log("[HTTP] baseURL =", http.defaults.baseURL ?? "(origin)");
+  // console.log("[HTTP] baseURL =", http.defaults.baseURL ?? "(origin)");
   if (!http.defaults.baseURL) {
     console.warn(
       "[HTTP] baseURL 미설정 — 상대경로로 호출됩니다. 프록시(vite.config.ts server.proxy)나 CORS 설정을 확인하세요."
@@ -71,12 +71,12 @@ http.interceptors.request.use((config) => {
   }
   if (import.meta.env.DEV) {
     try {
-      console.log("[HTTP] →", http.getUri(config));
+      // console.log("[HTTP] →", http.getUri(config));
       const h = (config.headers as any) || {};
-      console.log(
-        "[HTTP]   Authorization:",
-        h?.Authorization || h?.authorization || "(none)"
-      );
+      // console.log(
+      //   "[HTTP]   Authorization:",
+      //   h?.Authorization || h?.authorization || "(none)"
+      // );
     } catch {}
   }
   return config;
