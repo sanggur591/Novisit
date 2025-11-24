@@ -167,13 +167,17 @@ function TagEditor({
 function NoticeCard({
   item,
   setting,
+  isSelected,
   onUpdated,
   onDeleted,
+  onSelect,
 }: {
   item: NoticeItem;
   setting: Setting;
+  isSelected: boolean;
   onUpdated: (updated: Setting) => void;
   onDeleted: (id: string) => void;
+  onSelect: (domainId: string | null) => void;
 }) {
   const { show } = useToast();
 
@@ -265,8 +269,22 @@ function NoticeCard({
     }
   };
 
+  const handleCardClick = (e: React.MouseEvent) => {
+    // 편집 중이거나 버튼/인풋 클릭 시에는 선택 동작 안함
+    if (editing) return;
+    const target = e.target as HTMLElement;
+    if (target.closest("button") || target.closest("input") || target.closest("a")) return;
+
+    // 이미 선택된 카드면 선택 해제, 아니면 선택
+    onSelect(isSelected ? null : setting.domain_id);
+  };
+
   return (
-    <div className={`notice-card ${editing ? "notice-card--editing" : ""}`}>
+    <div
+      className={`notice-card ${editing ? "notice-card--editing" : ""} ${isSelected ? "notice-card--selected" : ""}`}
+      onClick={handleCardClick}
+      style={{ cursor: editing ? "default" : "pointer" }}
+    >
       <div className="notice-card-header flex-between">
         <div className="flex-row notice-card-header-left">
           <div className="notice-card-tags">
@@ -467,7 +485,12 @@ function NoticeCard({
 }
 
 /* ----- 리스트 컨테이너 ----- */
-function NoticeSettingInner() {
+interface NoticeSettingProps {
+  selectedDomainId: string | null;
+  onSelectDomain: (domainId: string | null) => void;
+}
+
+function NoticeSettingInner({ selectedDomainId, onSelectDomain }: NoticeSettingProps) {
   const [items, setItems] = useState<NoticeItem[]>([]);
   const [settingsMap, setSettingsMap] = useState<Record<string, Setting>>({});
   const [domainMap, setDomainMap] = useState<Record<string, string>>({});
@@ -574,8 +597,10 @@ function NoticeSettingInner() {
               key={it.id}
               item={it}
               setting={s}
+              isSelected={selectedDomainId === s.domain_id}
               onUpdated={handleUpdated}
               onDeleted={handleDeleted}
+              onSelect={onSelectDomain}
             />
           );
         })}
@@ -588,9 +613,9 @@ function NoticeSettingInner() {
   );
 }
 
-const NoticeSetting: React.FC = () => (
+const NoticeSetting: React.FC<NoticeSettingProps> = ({ selectedDomainId, onSelectDomain }) => (
   <ToastProvider>
-    <NoticeSettingInner />
+    <NoticeSettingInner selectedDomainId={selectedDomainId} onSelectDomain={onSelectDomain} />
   </ToastProvider>
 );
 

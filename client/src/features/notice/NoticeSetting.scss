@@ -44,6 +44,18 @@
     }
   }
 
+  // 선택된 카드
+  &.notice-card--selected {
+    border: 2px solid #3b77d0;
+    background: #f0f7ff;
+    box-shadow: 0 4px 12px rgba(59, 119, 208, 0.2);
+
+    &:hover {
+      box-shadow: 0 4px 12px rgba(59, 119, 208, 0.25);
+      border: 2px solid #3b77d0;
+    }
+  }
+
   .notice-card-header {
     margin-bottom: 12px;
 
