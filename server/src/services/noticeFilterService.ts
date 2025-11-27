@@ -207,7 +207,7 @@ export async function sendNotifications(
         for (const setting of settings) {
           try {
             // 크롤링한 이미지 URL이 있으면 사용, 없으면 기본 이미지 사용
-            const imageUrlForMessage = imageUrl || crawlResult.imageUrl || 'https://raw.githubusercontent.com/pknu-wap/Novisit/main/hosting-image.png';
+            const imageUrlForMessage = imageUrl || crawlResult.imageUrl || 'https://raw.githubusercontent.com/pknu-wap/Novisit/main/images/hosting-image.png';
             
             let messageContent = '';
             if (setting.summary) {
